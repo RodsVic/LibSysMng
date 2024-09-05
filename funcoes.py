@@ -73,7 +73,6 @@ def remover_dados_livros():
             case _:
                 print("Opção inválida. Digite 1 ou 2")
             
-
 # atualização de valores
 def atualizar_valores():
     while True:
@@ -109,7 +108,7 @@ def atualizar_valores():
                         UPDATE Livros
                         SET Gênero = ?
                         WHERE ID_Livro = ?
-                                   """,novo_genero, id)
+                                   """,novo_genero, id_livro)
                     conn.commit()
                     print("\nGênero atualizado com sucesso")
                 case 3:
@@ -170,6 +169,6 @@ def listar_valores():
         SELECT ID_Livro, Titulo FROM Livros
                     """)
     livros = cursor.fetchall()
-    for id, livro in enumerate(livros):
-        print(f"{id+1} - {livro}")    
+    for id_livro, titulo in enumerate(livros):
+        print(f"{id_livro} - {titulo}")    
         

@@ -1,4 +1,8 @@
 import funcoes
+import sqlite3
+    
+conn = sqlite3.connect('library.db')
+cursor = conn.cursor()
 
 done = False
 largura = 10
@@ -36,3 +40,4 @@ while not done:
         case _:
             print("Número inválido")
             
+conn.close()
