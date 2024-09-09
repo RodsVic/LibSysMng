@@ -6,72 +6,87 @@ cursor = conn.cursor()
 # adição de valores
 def inserir_dados_livros():
     while True:
-        titulo = input("Nome do livro: ")
-        genero = input("Gênero do livro: ")
-        
         try:
-            current_year = 2024
-            ano = int(input("Ano de lançamento: "))
-            if ano > current_year:
-                raise ValueError("Ano inválido\n")
-        except ValueError as e:
-            print(f"Erro: {e}")
+            titulo = input("Nome do livro: ")
+            genero = input("Gênero do livro: ")
+            try:
+                current_year = 2024
+                ano = int(input("Ano de lançamento: "))
+                if ano > current_year:
+                    raise ValueError("Ano inválido\n")
+            except ValueError as e:
+                print(f"Erro: {e}")
+                continue 
             
-        qtd_dsp = int(input("Quantidade disponível: "))
-
-        cursor.execute("""
-            INSERT INTO Livros (Titulo, Gênero, Ano, Qtd_dsp)
-            VALUES (?, ?, ?, ?)
-        """, (titulo, genero, ano, qtd_dsp))
-        conn.commit()
-        print("\nLivro adicionado com sucesso!")
-
-        print("""
-                [1] - Adicionar mais um livro
-                [2] - Sair
-                """)
-        continuar = input("-> Opção:\n")
-        match continuar:
-            case '1':
-                continue
-            case '2':
-                break
-            case _:
-                print("\nOpção inválida. Digite 1 ou 2")
+            qtd_dsp = int(input("Quantidade disponível: "))
+            
+            cursor.execute("""
+                INSERT INTO Livros (Titulo, Gênero, Ano, Qtd_dsp)
+                VALUES (?, ?, ?, ?)
+            """, (titulo, genero, ano, qtd_dsp))
+            conn.commit()
+            print("\nLivro adicionado com sucesso!")
+        except sqlite3.Error as e:
+            print(f"Erro ao inserir dados no banco: {e}")
+            conn.rollback()
+            
+        while True:
+            print("""
+                    [1] - Adicionar mais um livro
+                    [2] - Sair
+                    """)
+            continuar = input("-> Opção:\n")
+            match continuar:
+                case '1':
+                    break
+                case '2':
+                    return
+                case _:
+                    print("\nOpção inválida. Digite 1 ou 2")
 
 # remoção de valores
 def remover_dados_livros():
     while True:
-        id_livro = int(input("\nID do Livro:\n"))
-        cursor.execute("""
-            SELECT ID_Livro, Titulo FROM Livros
-            WHERE ID_Livro = ?
-                       """, (id_livro,))
-        livro = cursor.fetchone()
-        
-        if livro:
-            titulo = livro[1]
+        try:
+            id_livro = int(input("\nID do Livro:\n"))
             cursor.execute("""
-                DELETE FROM Livros
+                SELECT ID_Livro, Titulo FROM Livros
                 WHERE ID_Livro = ?
-                           """, (id_livro,))
-            conn.commit()
-            print(f"\nLivro {titulo} removido  com sucesso")
-        else:
-            print("\nLivro não encontrado na tabela")
-        
-        print("""
-              [1] - Remover mais um livro
-              [2] - Sair
-              """)
-        continuar = input("-> Opção: ")
-        match continuar:
-            case "1":
-                continue
-            case "2":
-                break
-            case _:
-                print("Opção inválida. Digite 1 ou 2")
+                        """, (id_livro,))
+            livro = cursor.fetchone()
+            
+            if livro:
+                titulo = livro[1]
+                try:
+                    cursor.execute("""
+                        DELETE FROM Livros
+                        WHERE ID_Livro = ?
+                                """, (id_livro,))
+                    conn.commit()
+                    print(f"\nLivro {titulo} removido  com sucesso")
+                except sqlite3.Error as e:
+                    print(f"\nLivro não encontrado na tabela {e}")
+                    conn.rollback()
+            else:
+                print("Livro não encontrado na tabela")
+        except ValueError:
+            print("ID inválido. Insira um número válido")
+        except sqlite3.Error as e:
+            print(f"\nErro no banco de dados: {e}")
+            
+        while True:
+            print("""
+                [1] - Remover mais um livro
+                [2] - Sair
+                """)
+            continuar = input("-> Opção: ")
+            match continuar:
+                case "1":
+                    break
+                case "2":
+                    return
+                case _:
+                    print("Opção inválida. Digite 1 ou 2")
             
 # atualização de valores
 def atualizar_valores():
