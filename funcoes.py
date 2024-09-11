@@ -6,7 +6,7 @@ class Livro:
         self.genero = genero
         self.ano = ano
         self.qtd_dsp = quantidade_disponivel
-
+    
     def coletar_dados_livro(self):
         while True:
             try:
