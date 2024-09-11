@@ -1,189 +1,144 @@
 import sqlite3
 
-conn = sqlite3.connect('library.db')
-cursor = conn.cursor()
+class Livro:
+    def __init__(self, titulo, genero, ano, qtd_dsp):
+        self.titulo = titulo
+        self.genero = genero
+        self.ano = ano
+        self.qtd_dsp = qtd_dsp
 
-# adição de valores
-def inserir_dados_livros():
-    while True:
-        try:
-            titulo = input("Nome do livro: ")
-            genero = input("Gênero do livro: ")
+
+class TratamentoDeErros:
+    CURRENT_YEAR = 2024
+
+    @staticmethod
+    def validar_titulo(titulo):
+        if not titulo.strip():
+            raise ValueError("Erro: O título não pode ser vazio.")
+        return titulo
+
+    @staticmethod
+    def validar_genero(genero):
+        if not genero.strip():
+            raise ValueError("Erro: O gênero não pode ser vazio.")
+        return genero
+
+    @staticmethod
+    def validar_ano(ano):
+        if not ano.isdigit() or int(ano) > TratamentoDeErros.CURRENT_YEAR or int(ano) < 0:
+            raise ValueError("Erro: Ano inválido.")
+        return int(ano)
+
+    @staticmethod
+    def validar_qtd_dsp(qtd_dsp):
+        if not qtd_dsp.isdigit() or int(qtd_dsp) < 0:
+            raise ValueError("Erro: Quantidade disponível inválida.")
+        return int(qtd_dsp)
+
+
+class ControleLivros:
+    def __init__(self, conn, cursor):
+        self.conn = conn
+        self.cursor = cursor
+    
+    def coletar_dados_livro(self):
+        while True:
             try:
-                current_year = 2024
-                ano = int(input("Ano de lançamento: "))
-                if ano > current_year:
-                    raise ValueError("Ano inválido\n")
-            except ValueError as e:
-                print(f"Erro: {e}")
-                continue 
-            
-            qtd_dsp = int(input("Quantidade disponível: "))
-            
-            cursor.execute("""
+                titulo = TratamentoDeErros.validar_titulo(input("Título: ").strip())
+                genero = TratamentoDeErros.validar_genero(input("Gênero: ").strip())
+                ano = TratamentoDeErros.validar_ano(input("Ano: ").strip())
+                qtd_dsp = TratamentoDeErros.validar_qtd_dsp(input("Quantidade disponível: ").strip())
+                return titulo, genero, ano, qtd_dsp
+            except ValueError as ve:
+                print(f"{ve}")
+                print("Por favor, tente novamente.\n")
+
+
+    def inserir_livro(self):
+        titulo, genero, ano, qtd_dsp = self.coletar_dados_livro()
+        
+        try:
+            # livro = Livro(titulo, genero, ano, qtd_dsp)
+            # TratamentoDeErros.validar_dados(livro)
+
+            self.cursor.execute("""
                 INSERT INTO Livros (Titulo, Gênero, Ano, Qtd_dsp)
                 VALUES (?, ?, ?, ?)
             """, (titulo, genero, ano, qtd_dsp))
-            conn.commit()
+            
+            self.conn.commit()
             print("\nLivro adicionado com sucesso!")
+        except ValueError as ve:
+            print(f"{ve}")
         except sqlite3.Error as e:
             print(f"Erro ao inserir dados no banco: {e}")
-            conn.rollback()
-            
-        while True:
-            print("""
-                    [1] - Adicionar mais um livro
-                    [2] - Sair
-                    """)
-            continuar = input("-> Opção:\n")
-            match continuar:
-                case '1':
-                    break
-                case '2':
-                    return
-                case _:
-                    print("\nOpção inválida. Digite 1 ou 2")
+            self.conn.rollback()
 
-# remoção de valores
-def remover_dados_livros():
-    while True:
+    def remover_livro(self, id_livro):
         try:
-            id_livro = int(input("\nID do Livro:\n"))
-            cursor.execute("""
-                SELECT ID_Livro, Titulo FROM Livros
-                WHERE ID_Livro = ?
-                        """, (id_livro,))
-            livro = cursor.fetchone()
-            
-            if livro:
-                titulo = livro[1]
-                try:
-                    cursor.execute("""
-                        DELETE FROM Livros
-                        WHERE ID_Livro = ?
-                                """, (id_livro,))
-                    conn.commit()
-                    print(f"\nLivro {titulo} removido  com sucesso")
-                except sqlite3.Error as e:
-                    print(f"\nLivro não encontrado na tabela {e}")
-                    conn.rollback()
-            else:
-                print("Livro não encontrado na tabela")
-        except ValueError:
-            print("ID inválido. Insira um número válido")
-        except sqlite3.Error as e:
-            print(f"\nErro no banco de dados: {e}")
-            
-        while True:
-            print("""
-                [1] - Remover mais um livro
-                [2] - Sair
-                """)
-            continuar = input("-> Opção: ")
-            match continuar:
-                case "1":
-                    break
-                case "2":
-                    return
-                case _:
-                    print("Opção inválida. Digite 1 ou 2")
-            
-# atualização de valores
-def atualizar_valores():
-    while True:
-        id_livro = int(input("\nID do Livro:\n"))
-        cursor.execute("""
-            SELECT ID_Livro FROM Livros
-            WHERE ID_Livro = ?
-                       """, (id_livro,))
-        livro = cursor.fetchone()
-        
-        if livro:
-            pergunta = int(input("""
-                Qual registro deseja alterar?
-                [1] - Título
-                [2] - Gênero
-                [3] - Ano
-                [4] - Quantidade Disponível\n
-                -> Opção:\n"""))
-            
-            match pergunta:
-                case 1:
-                    novo_titulo = input("Novo título: ")
-                    cursor.execute("""
-                        UPDATE Livros
-                        SET Titulo = ?
-                        WHERE ID_Livro = ?
-                                   """, (novo_titulo, id_livro))
-                    conn.commit()
-                    print("\nTítulo atualizado com sucesso")
-                case 2:
-                    novo_genero = input("Novo gênero: ")
-                    cursor.execute("""
-                        UPDATE Livros
-                        SET Gênero = ?
-                        WHERE ID_Livro = ?
-                                   """,novo_genero, id_livro)
-                    conn.commit()
-                    print("\nGênero atualizado com sucesso")
-                case 3:
-                    novo_ano = int(input("Novo ano: "))
-                    cursor.execute("""
-                        UPDATE Livros
-                        SET Ano = ?
-                        WHERE ID_Livro = ?
-                                   """, (novo_ano, id_livro))
-                    conn.commit()
-                    print("\nAno atualizado com sucesso")
-                case 4:
-                    nova_qtd_dsp = int(input("Nova quantidade disponível: "))
-                    cursor.execute("""
-                        UPDATE Livros
-                        SET Qtd_dsp = ?
-                        WHERE ID_Livro = ?
-                                   """, nova_qtd_dsp, id_livro)
-                    conn.commit()
-                    print("\nQuantidade disponível atualizada com sucesso")
-                case _:
-                    print("\nOpção inválida. Digite 1, 2, 3 ou 4")
-                    continue
-        else:
-            print("\nID do livro não encontrado")
-        
-        continuar = input("""
-           Deseja continuar? [S/N]
-            -> Opção:  """)
-        if continuar.lower() != 's':
-            break
-            
-# busca de valores
-def buscar_valores():
-    while True:
-        id_livro = int(input("\nID do Livro:\n"))
-        cursor.execute("""
-            SELECT ID_Livro, Titulo, Gênero, Ano, Qtd_dsp FROM Livros
-            WHERE ID_Livro = ?
-                       """, (id_livro,))
-        livro = cursor.fetchone()
-        
-        if livro:
-            id_livro, titulo, genero, ano, qtd_dsp = livro
-            print(f"\n{'-'*10} Detalhes do livro {'-'*10}\n")
-            print(f"ID do Livro: {id_livro}")
-            print(f"Título: {titulo}")
-            print(f"Gênero: {genero}")
-            print(f"Ano: {ano}")
-            print(f"Quantidade Disponível: {qtd_dsp}\n")
-            break
-        else:
-            print("\nLivro não encontrado na base de dados.")
+            self.cursor.execute("SELECT Titulo FROM Livros WHERE ID_Livro = ?", (id_livro,))
+            livro = self.cursor.fetchone()
 
-# listar valores
-def listar_valores():
-    cursor.execute("""
-        SELECT ID_Livro, Titulo FROM Livros
-                    """)
-    livros = cursor.fetchall()
-    for id_livro, titulo in enumerate(livros):
-        print(f"{id_livro} - {titulo}")    
-        
+            if livro:
+                self.cursor.execute("DELETE FROM Livros WHERE ID_Livro = ?", (id_livro,))
+                self.conn.commit()
+                print(f"\nLivro '{livro[0]}' removido com sucesso!")
+            else:
+                print("Erro: Livro não encontrado.")
+        except sqlite3.Error as e:
+            print(f"Erro no banco de dados: {e}")
+            self.conn.rollback()
+
+    def atualizar_livro(self, id_livro, titulo=None, genero=None, ano=None, qtd_dsp=None):
+        try:
+            campos = []
+            valores = []
+            
+            if titulo:
+                campos.append("Titulo = ?")
+                valores.append(titulo)
+            if genero:
+                campos.append("Gênero = ?")
+                valores.append(genero)
+            if ano:
+                campos.append("Ano = ?")
+                valores.append(ano)
+            if qtd_dsp:
+                campos.append("Qtd_dsp = ?")
+                valores.append(qtd_dsp)
+            
+            valores.append(id_livro)
+
+            if campos:
+                self.cursor.execute(f"""
+                    UPDATE Livros
+                    SET {', '.join(campos)}
+                    WHERE ID_Livro = ?
+                """, tuple(valores))
+                self.conn.commit()
+                print("Livro atualizado com sucesso!")
+            else:
+                print("Nenhum campo para atualizar.")
+        except sqlite3.Error as e:
+            print(f"Erro ao atualizar o banco de dados: {e}")
+            self.conn.rollback()
+
+    def buscar_livro(self, id_livro):
+        try:
+            self.cursor.execute("SELECT ID_Livro, Titulo, Gênero, Ano, Qtd_dsp FROM Livros WHERE ID_Livro = ?", (id_livro,))
+            livro = self.cursor.fetchone()
+            if livro:
+                print(f"ID: {livro[0]}, Título: {livro[1]}, Gênero: {livro[2]}, Ano: {livro[3]}, Quantidade: {livro[4]}")
+            else:
+                print("Livro não encontrado.")
+        except sqlite3.Error as e:
+            print(f"Erro ao buscar o livro: {e}")
+
+    def listar_livros(self):
+        try:
+            self.cursor.execute("SELECT ID_Livro, Titulo FROM Livros")
+            livros = self.cursor.fetchall()
+            for livro in livros:
+                print(f"ID: {livro[0]}, Título: {livro[1]}")
+        except sqlite3.Error as e:
+            print(f"Erro ao listar os livros: {e}")

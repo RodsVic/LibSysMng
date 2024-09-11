@@ -1,8 +1,10 @@
-import funcoes
+from funcoes import ControleLivros as CL
 import sqlite3
     
 conn = sqlite3.connect('library.db')
 cursor = conn.cursor()
+
+controle_livros = CL(conn, cursor)
 
 done = False
 largura = 10
@@ -24,16 +26,22 @@ while not done:
     escolha = (int(input("\n-> Opção:\n")))
     match escolha:
         case 1:
-            funcoes.inserir_dados_livros()            
+            # titulo = input("Título: ").strip()
+            # genero = input("Gênero: ").strip()
+            # ano = input("Ano: ").strip()
+            # qtd_dsp = input("Quantidade disponível: ").strip()
+            controle_livros.inserir_livro()
         case 2:
-            funcoes.remover_dados_livros()
+            id_livro = int(input("Digite o ID do livro que deseja buscar: "))
+            controle_livros.remover_livro(id_livro)
         case 3:
-            funcoes.atualizar_valores()
+            controle_livros.atualizar_livro()
         case 4:
-            funcoes.buscar_valores()
+            id_livro = int(input("Digite o ID do livro que deseja buscar: "))
+            controle_livros.buscar_livro(id_livro)
         case 5:
             print()
-            funcoes.listar_valores()
+            controle_livros.listar_livros()
         case 6:
             print("\nSaindo...\n")
             break
@@ -41,4 +49,3 @@ while not done:
             print("Número inválido")
             
 conn.close()
-        
