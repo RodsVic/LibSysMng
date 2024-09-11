@@ -32,10 +32,11 @@ while not done:
             # qtd_dsp = input("Quantidade disponível: ").strip()
             controle_livros.inserir_livro()
         case 2:
-            id_livro = int(input("Digite o ID do livro que deseja buscar: "))
+            id_livro = int(input("Digite o ID do livro que deseja remover: "))
             controle_livros.remover_livro(id_livro)
         case 3:
-            controle_livros.atualizar_livro()
+            id_livro = int(input("Digite o ID do livro que deseja atualizar: "))
+            controle_livros.atualizar_livro(id_livro)
         case 4:
             id_livro = int(input("Digite o ID do livro que deseja buscar: "))
             controle_livros.buscar_livro(id_livro)

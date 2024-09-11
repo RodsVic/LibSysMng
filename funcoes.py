@@ -1,11 +1,23 @@
 import sqlite3
 
 class Livro:
-    def __init__(self, titulo, genero, ano, qtd_dsp):
+    def __init__(self, titulo, genero, ano, quantidade_disponivel):
         self.titulo = titulo
         self.genero = genero
         self.ano = ano
-        self.qtd_dsp = qtd_dsp
+        self.qtd_dsp = quantidade_disponivel
+
+    def coletar_dados_livro(self):
+        while True:
+            try:
+                titulo = TratamentoDeErros.validar_titulo(input("Título: ").strip())
+                genero = TratamentoDeErros.validar_genero(input("Gênero: ").strip())
+                ano = TratamentoDeErros.validar_ano(input("Ano: ").strip())
+                qtd_dsp = TratamentoDeErros.validar_quantidade_disponivel(input("Quantidade disponível: ").strip())
+                return titulo, genero, ano, qtd_dsp
+            except ValueError as ve:
+                print(f"{ve}")
+                print("Por favor, tente novamente.\n")
 
 
 class TratamentoDeErros:
@@ -30,41 +42,25 @@ class TratamentoDeErros:
         return int(ano)
 
     @staticmethod
-    def validar_qtd_dsp(qtd_dsp):
-        if not qtd_dsp.isdigit() or int(qtd_dsp) < 0:
+    def validar_quantidade_disponivel(quantidade_disponivel):
+        if not quantidade_disponivel.isdigit() or int(quantidade_disponivel) < 0:
             raise ValueError("Erro: Quantidade disponível inválida.")
-        return int(qtd_dsp)
+        return int(quantidade_disponivel)
 
 
 class ControleLivros:
     def __init__(self, conn, cursor):
         self.conn = conn
         self.cursor = cursor
-    
-    def coletar_dados_livro(self):
-        while True:
-            try:
-                titulo = TratamentoDeErros.validar_titulo(input("Título: ").strip())
-                genero = TratamentoDeErros.validar_genero(input("Gênero: ").strip())
-                ano = TratamentoDeErros.validar_ano(input("Ano: ").strip())
-                qtd_dsp = TratamentoDeErros.validar_qtd_dsp(input("Quantidade disponível: ").strip())
-                return titulo, genero, ano, qtd_dsp
-            except ValueError as ve:
-                print(f"{ve}")
-                print("Por favor, tente novamente.\n")
-
 
     def inserir_livro(self):
-        titulo, genero, ano, qtd_dsp = self.coletar_dados_livro()
+        titulo, genero, ano, quantidade_disponivel = Livro.coletar_dados_livro(self)
         
         try:
-            # livro = Livro(titulo, genero, ano, qtd_dsp)
-            # TratamentoDeErros.validar_dados(livro)
-
             self.cursor.execute("""
                 INSERT INTO Livros (Titulo, Gênero, Ano, Qtd_dsp)
                 VALUES (?, ?, ?, ?)
-            """, (titulo, genero, ano, qtd_dsp))
+            """, (titulo, genero, ano, quantidade_disponivel))
             
             self.conn.commit()
             print("\nLivro adicionado com sucesso!")
@@ -89,7 +85,8 @@ class ControleLivros:
             print(f"Erro no banco de dados: {e}")
             self.conn.rollback()
 
-    def atualizar_livro(self, id_livro, titulo=None, genero=None, ano=None, qtd_dsp=None):
+    def atualizar_livro(self, id_livro, titulo=None, genero=None, ano=None, quantidade_disponivel=None):
+        titulo, genero, ano, quantidade_disponivel = Livro.coletar_dados_livro(self)
         try:
             campos = []
             valores = []
@@ -103,9 +100,9 @@ class ControleLivros:
             if ano:
                 campos.append("Ano = ?")
                 valores.append(ano)
-            if qtd_dsp:
+            if quantidade_disponivel:
                 campos.append("Qtd_dsp = ?")
-                valores.append(qtd_dsp)
+                valores.append(quantidade_disponivel)
             
             valores.append(id_livro)
 
@@ -128,7 +125,7 @@ class ControleLivros:
             self.cursor.execute("SELECT ID_Livro, Titulo, Gênero, Ano, Qtd_dsp FROM Livros WHERE ID_Livro = ?", (id_livro,))
             livro = self.cursor.fetchone()
             if livro:
-                print(f"ID: {livro[0]}, Título: {livro[1]}, Gênero: {livro[2]}, Ano: {livro[3]}, Quantidade: {livro[4]}")
+                print(f"\nID: {livro[0]} \nTítulo: {livro[1]} \nGênero: {livro[2]} \nAno: {livro[3]} \nQuantidade: {livro[4]}")
             else:
                 print("Livro não encontrado.")
         except sqlite3.Error as e:
@@ -139,6 +136,7 @@ class ControleLivros:
             self.cursor.execute("SELECT ID_Livro, Titulo FROM Livros")
             livros = self.cursor.fetchall()
             for livro in livros:
-                print(f"ID: {livro[0]}, Título: {livro[1]}")
+                print(f"ID: {livro[0]} \nTítulo: {livro[1]} \n{'=' * 50}\n")
         except sqlite3.Error as e:
             print(f"Erro ao listar os livros: {e}")
+#vsf
